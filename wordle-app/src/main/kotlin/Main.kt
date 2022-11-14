@@ -1,11 +1,7 @@
 import java.io.File
 import java.util.*
-import kotlin.collections.ArrayList
 
 fun main() {
-    // Create a tally that counts each character in alphabet
-    var charTally = AlphabetMap().alphabetMap
-
     // Import Wordle word list from text file
     val wordArray: Array<String> = arrayOf()
     val list: MutableList<String> = wordArray.toMutableList()
@@ -34,13 +30,17 @@ fun main() {
 
     // Game process
     while (guessCounter <= 6) {
-        // Set the Character Tally map to initial values for the selected word.
+        // Initialise Tally
+        // Create a tally that counts each character in alphabet
+        val charTally: MutableMap<Char, Int> = AlphabetMap().alphabetMap
+
+        // Set the Character Tally to initial values for the selected word.
         selectedWordCharArray.forEach { c: Char -> setAlphabetTally(charTally, c) }
 
         // USER GUESS VALIDATION
         // must only contain letters of alphabet and be five charaters long.
         do {
-            val wordPattern = Regex("[A-Za-z]{5}")       //  "\\w+"
+            val wordPattern = Regex("[A-Za-z]{5}")
             println("What is your guess: ")
             val scanner  = Scanner(System.`in`)
             input = scanner.next().trim()
@@ -56,11 +56,16 @@ fun main() {
         val wordAsCharArray = selectedWord.toCharArray()
 
         var resultOfGuess: CharArray = checkForAlignedChars(wordAsCharArray, inputAsCharArray, charTally)
-
         resultOfGuess = checkForCharInWord(wordAsCharArray, inputAsCharArray, charTally, resultOfGuess)
         println("Wordle result for guess #$guessCounter : ")
+
         for (c in resultOfGuess) {
-            print("$c ")
+            var guessResult: String = when(c) {
+                'g' -> TextColor.GREEN.color + "g" + TextColor.RESET.color
+                'o' -> TextColor.YELLOW.color + "o" + TextColor.RESET.color
+                else -> TextColor.RED.color + "X" + TextColor.RESET.color
+            }
+            print(guessResult + " ")
         }
         println()
 
@@ -82,7 +87,7 @@ fun main() {
     println("End of game.\nPlease try again by running program again!")
 }
 
-fun setAlphabetTally(alphabetTally:  MutableMap<Char, Int>, char: Char) {
+fun setAlphabetTally(alphabetTally: MutableMap<Char, Int>, char: Char) {
     var alphabetValue: Int? = alphabetTally[char]
     if (alphabetValue != null) {
         alphabetTally[char] = alphabetValue + 1
@@ -109,7 +114,9 @@ fun checkForCharInWord(targetWord: CharArray,
     return result
 }
 
-fun checkForAlignedChars (targetWord: CharArray, userGuess: CharArray, alphabetTally:  MutableMap<Char, Int>): CharArray {
+fun checkForAlignedChars (targetWord: CharArray,
+                          userGuess: CharArray,
+                          alphabetTally:  MutableMap<Char, Int>): CharArray {
     var result: CharArray = CharArray(targetWord.size)
     for (i in 0..targetWord.size -1) {
         if (targetWord[i] == userGuess[i]) {
