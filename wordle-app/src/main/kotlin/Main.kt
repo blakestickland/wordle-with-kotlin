@@ -3,71 +3,24 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 fun main() {
-    var alphabetMap = mutableMapOf(
-        'a' to 0,
-        'b' to 0,
-        'c' to 0,
-        'd' to 0,
-        'e' to 0,
-        'f' to 0,
-        'g' to 0,
-        'h' to 0,
-        'i' to 0,
-        'j' to 0,
-        'k' to 0,
-        'l' to 0,
-        'm' to 0,
-        'n' to 0,
-        'o' to 0,
-        'p' to 0,
-        'q' to 0,
-        'r' to 0,
-        's' to 0,
-        't' to 0,
-        'u' to 0,
-        'v' to 0,
-        'w' to 0,
-        'x' to 0,
-        'y' to 0,
-        'z' to 0
-    )
-//    var alphabetValue = alphabetMap.get('a')
-//    if (alphabetValue != null) {
-//        alphabetMap.put('a', alphabetValue + 1)
-//    }
-//
-//    println(alphabetMap['a'])
+    // Create a tally that counts each character in alphabet
+    var charTally = AlphabetMap().alphabetMap
 
-    fun setAlphabetTally(alphabetTally:  MutableMap<Char, Int>, char: Char) {
-        var alphabetValue: Int? = alphabetMap[char]
-        if (alphabetValue != null) {
-            alphabetTally[char] = alphabetValue + 1
-        }
-    }
-
-
-
+    // Import Wordle word list from text file
     val wordArray: Array<String> = arrayOf()
     val list: MutableList<String> = wordArray.toMutableList()
-
     readFileAsLinesUsingBufferedReader("sample-word-list.txt", list)
 
+    // Select word from imported list
     val wordListSize: Int = list.size
-
     val randNum: Double = Math.random()
-
-    val selectedIndex: Int = (randNum * wordListSize).toInt()       // toInt() rounds down to Int
-
-    //  pick a random word from list
+    val selectedIndex: Int = (randNum * wordListSize).toInt() // toInt() rounds down
     val selectedWord: String = list[selectedIndex]
     val selectedWordLength: Int = selectedWord.length
 
-    // convert to a char array and add each char to alphabet tally
+    // convert to a char array
     val selectedWordCharArray = selectedWord.toCharArray()
-    selectedWordCharArray.forEach { c: Char -> setAlphabetTally(alphabetMap, c) }
 
-    println(selectedWord)
-    println()
 
     println("Welcome to Bwordle!!!")
     println("Correct letter in the correct place; app returns 'g' for green.")
@@ -76,36 +29,63 @@ fun main() {
     println("Computer has selected a $selectedWordLength letter word.")
     println("Please try to guess it by entering a word the same length!")
 
-    var isCorrect: Boolean
-    val guessCount: Int = 0
-    val scanner  = Scanner(System.`in`)
+    var guessCounter: Int = 1
     var input: String
-    do {
-        val wordPattern = Regex("[A-Za-z]{5}")       //  "\\w+"
-        println("What is your guess: ")
-        input = scanner.next().trim()
-        isCorrect = input.matches(wordPattern)
-        if (!isCorrect) println("Invalid data!\nPlease guess again!")
-    } while (!isCorrect);
-    println("Valid data");
-    var inputLowercase = input.lowercase()
 
-    var inputAsCharArray = inputLowercase.toCharArray()
-    for (c in inputAsCharArray) {
+    // Game process
+    while (guessCounter <= 6) {
+        // Set the Character Tally map to initial values for the selected word.
+        selectedWordCharArray.forEach { c: Char -> setAlphabetTally(charTally, c) }
+
+        // USER GUESS VALIDATION
+        // must only contain letters of alphabet and be five charaters long.
+        do {
+            val wordPattern = Regex("[A-Za-z]{5}")       //  "\\w+"
+            println("What is your guess: ")
+            val scanner  = Scanner(System.`in`)
+            input = scanner.next().trim()
+            val isValidGuess: Boolean = input.matches(wordPattern)
+            if (!isValidGuess) println("Invalid guess!\n" +
+                    "Please try again! Remember, only use the alphabet and the word is 5 characters")
+        } while (!isValidGuess);
+
+        println("Valid guess!");
+        val inputLowercase = input.lowercase()
+        val inputAsCharArray = inputLowercase.toCharArray()
+
+        val wordAsCharArray = selectedWord.toCharArray()
+
+        var resultOfGuess: CharArray = checkForAlignedChars(wordAsCharArray, inputAsCharArray, charTally)
+
+        resultOfGuess = checkForCharInWord(wordAsCharArray, inputAsCharArray, charTally, resultOfGuess)
+        println("Wordle result for guess #$guessCounter : ")
+        for (c in resultOfGuess) {
+            print("$c ")
+        }
+        println()
+
+        guessCounter++
+
+        val convertedStringResultOfGuess: String = String(resultOfGuess)
+        if (convertedStringResultOfGuess == "ggggg") {
+            println("CONGRATULATIONS!!!\nCorrect guess!")
+            break
+        }
+    }
+
+    // After 6 guesses or correct guess, diplay the correct answer.
+    println("Word was: ")
+    for (c in selectedWordCharArray) {
         print("$c ")
     }
     println()
+    println("End of game.\nPlease try again by running program again!")
+}
 
-    var wordAsCharArray = selectedWord.toCharArray()
-
-    var resultOfGuess: CharArray = checkForAlignedChars(wordAsCharArray, inputAsCharArray, alphabetMap)
-    for (c in resultOfGuess) {
-        print("$c ")
-    }
-    println(alphabetMap)
-    resultOfGuess = checkForCharInWord(wordAsCharArray, inputAsCharArray, alphabetMap, resultOfGuess)
-    for (c in resultOfGuess) {
-        print("$c ")
+fun setAlphabetTally(alphabetTally:  MutableMap<Char, Int>, char: Char) {
+    var alphabetValue: Int? = alphabetTally[char]
+    if (alphabetValue != null) {
+        alphabetTally[char] = alphabetValue + 1
     }
 }
 
@@ -114,17 +94,10 @@ fun checkForCharInWord(targetWord: CharArray,
                        alphabetTally:  MutableMap<Char, Int>,
                        result: CharArray): CharArray {
     for (i in 0..userGuess.size -1) {
-        val targetWordNot = targetWord[i]
-        if (result[i] == 'g') {
-            println("Index $i is GREEN, continue; $targetWordNot")
-            continue
-        }
-
         var alphabetValue: Int? = alphabetTally[userGuess[i]]
 
         if (alphabetValue != null &&
             alphabetValue > 0) {
-            println(alphabetValue)
             for (j in 0..targetWord.size -1) {
                 if (userGuess[i] == targetWord[j] && result[i] != 'g') {
                     result[i] = 'o'
